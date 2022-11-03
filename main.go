@@ -102,7 +102,11 @@ func compileABI(fs *Flags) {
 	solcCompile(fs)
 
 	cpExec := exec.Command("cp", "./temp/artifacts/"+*fs.Target+".bin", *fs.Output+"/"+*fs.Target+".bin")
-	err := cpExec.Run()
+	err := os.MkdirAll(*fs.Output, os.ModePerm)
+	if err != nil {
+		panic(err)
+	}
+	err = cpExec.Run()
 	if err != nil {
 		log.Fatalln("Failed to copy .abi: ", cpExec.String())
 	}
