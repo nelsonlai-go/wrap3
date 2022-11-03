@@ -88,7 +88,7 @@ func solcCompile(fs *Flags) {
 	solcExec := exec.Command("solc", "./temp/contracts/"+*fs.Target, "--bin", "--abi", "--overwrite", "-o", "./temp/artifacts")
 	err := solcExec.Run()
 	if err != nil {
-		panic(err)
+		log.Fatalln("Failed to compile with solc: ", solcExec.String())
 	}
 }
 
