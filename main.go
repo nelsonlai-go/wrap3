@@ -54,7 +54,7 @@ wrap3
 		case "java":
 			compileJava(fs)
 		case "go":
-			// do compile go
+			compileGo(fs)
 		default:
 			log.Fatalf("non-support lang: %s\n", *fs.Lang)
 		}
