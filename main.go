@@ -101,14 +101,21 @@ func compileABI(fs *Flags) {
 	processAllContractFiles()
 	solcCompile(fs)
 
-	cpExec := exec.Command("cp", "./temp/artifacts/"+*fs.Target+".bin", *fs.Output+"/"+*fs.Target+".bin")
 	err := os.MkdirAll(*fs.Output, os.ModePerm)
 	if err != nil {
 		panic(err)
 	}
-	err = cpExec.Run()
+
+	cpAbiExec := exec.Command("cp", "./temp/artifacts/"+*fs.Target+".abi", *fs.Output+"/"+*fs.Target+".abi")
+	err = cpAbiExec.Run()
 	if err != nil {
-		log.Fatalln("Failed to copy .abi: ", cpExec.String())
+		log.Fatalln("Failed to copy .abi: ", cpAbiExec.String())
+	}
+
+	cpBinExec := exec.Command("cp", "./temp/artifacts/"+*fs.Target+".bin", *fs.Output+"/"+*fs.Target+".bin")
+	err = cpBinExec.Run()
+	if err != nil {
+		log.Fatalln("Failed to copy .abi: ", cpBinExec.String())
 	}
 }
 
