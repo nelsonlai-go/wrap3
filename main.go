@@ -25,12 +25,12 @@ import (
 const OPENZEPPELIN_PACKAGE_NAME = "@openzeppelin"
 
 type Flags struct {
-	Lang             string
-	Target           string
-	ContractFolder   string
-	NodeModuleFolder string
-	Output           string
-	Package          string
+	Lang             *string
+	Target           *string
+	ContractFolder   *string
+	NodeModuleFolder *string
+	Output           *string
+	Package          *string
 }
 
 func main() {
@@ -50,13 +50,13 @@ wrap3
  compile`)
 	case "compile":
 		fs := parseFlags()
-		switch fs.Lang {
+		switch *fs.Lang {
 		case "java":
 			compileJava(fs)
 		case "go":
 			// do compile go
 		default:
-			log.Fatalf("non-support lang: %s\n", fs.Lang)
+			log.Fatalf("non-support lang: %s\n", *fs.Lang)
 		}
 	default:
 		log.Fatalf("unknown action: %s\n", action)
@@ -77,7 +77,7 @@ func compileJava(fs *Flags) {
 }
 
 func web3jCompile(fs *Flags) {
-	web3jExec := exec.Command("web3j", "generate", "solidity", "-b", "./temp/artifacts/"+fs.Target+".bin", "-a", "./temp/artifacts/"+fs.Target+".abi", "-o", fs.Output, "-p", fs.Package)
+	web3jExec := exec.Command("web3j", "generate", "solidity", "-b", "./temp/artifacts/"+*fs.Target+".bin", "-a", "./temp/artifacts/"+*fs.Target+".abi", "-o", *fs.Output, "-p", *fs.Package)
 	err := web3jExec.Run()
 	if err != nil {
 		panic(err)
@@ -85,7 +85,7 @@ func web3jCompile(fs *Flags) {
 }
 
 func solcCompile(fs *Flags) {
-	solcExec := exec.Command("solc", "./temp/contracts/"+fs.Target, "--bin", "--abi", "--overwrite", "-o", "./temp/artifacts")
+	solcExec := exec.Command("solc", "./temp/contracts/"+*fs.Target, "--bin", "--abi", "--overwrite", "-o", "./temp/artifacts")
 	err := solcExec.Run()
 	if err != nil {
 		panic(err)
@@ -134,7 +134,7 @@ func getAllContractFilePaths(dir string) []string {
 }
 
 func copyOpenZeppelinPackage(fs *Flags) {
-	from := fs.NodeModuleFolder + "/" + OPENZEPPELIN_PACKAGE_NAME
+	from := *fs.NodeModuleFolder + "/" + OPENZEPPELIN_PACKAGE_NAME
 	to := "./temp/contracts/" + OPENZEPPELIN_PACKAGE_NAME
 	cmd := exec.Command("cp", "--recursive", from, to)
 	err := cmd.Run()
@@ -144,7 +144,7 @@ func copyOpenZeppelinPackage(fs *Flags) {
 }
 
 func copyContractFolder(fs *Flags) {
-	from := fs.ContractFolder
+	from := *fs.ContractFolder
 	to := "./temp/contracts"
 	cmd := exec.Command("cp", "--recursive", from, to)
 	err := cmd.Run()
@@ -169,13 +169,19 @@ func removeTempFolder() {
 }
 
 func parseFlags() *Flags {
-	f := &Flags{}
-	f.Lang = getFlag("lang", "l", "", true)
-	f.Target = getFlag("target", "t", "", true)
-	f.ContractFolder = getFlag("contract-folder", "cf", "./contracts", false)
-	f.NodeModuleFolder = getFlag("node-module-folder", "nf", "./node_modules", false)
-	f.Output = getFlag("output", "o", "./wrap3", false)
-	f.Package = getFlag("package", "p", "", true)
+	f := &Flags{
+		Lang:             flag.String("l", "", "language"),
+		Target:           flag.String("t", "", "target"),
+		ContractFolder:   flag.String("cf", "./contracts", "contract folder"),
+		NodeModuleFolder: flag.String("nf", "./node_modules", "node module folder"),
+		Output:           flag.String("o", "./wrap3", "output folder"),
+		Package:          flag.String("p", "", "package name"),
+	}
+	flag.Parse()
+
+	if *f.Lang == "" || *f.Target == "" || *f.Package == "" {
+		log.Fatalln("-l, -t, -p are required")
+	}
 	return f
 }
 
@@ -184,19 +190,4 @@ func getAction() string {
 		log.Fatalln("action is missing. usage: wrap3 <action> <options>")
 	}
 	return os.Args[len(os.Args)-1]
-}
-
-func getFlag(name string, shortName string, defaultValue string, required bool) string {
-	var value *string
-	flag.StringVar(value, name, "", "")
-	if *value == "" {
-		flag.StringVar(value, shortName, "", "")
-	}
-	flag.Parse()
-	if required && *value == "" {
-		log.Fatalf("flag: -%s (-%s) is required", name, shortName)
-	} else if !required && *value != "" {
-		return defaultValue
-	}
-	return *value
 }
