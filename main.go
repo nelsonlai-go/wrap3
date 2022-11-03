@@ -85,7 +85,7 @@ func web3jCompile(fs *Flags) {
 }
 
 func solcCompile(fs *Flags) {
-	solcExec := exec.Command("solc", "./temp/contracts/"+*fs.Target, "--bin", "--abi", "--overwrite", "-o", "./temp/artifacts")
+	solcExec := exec.Command("solc", "./temp/contracts/"+*fs.Target+".sol", "--bin", "--abi", "--overwrite", "-o", "./temp/artifacts")
 	err := solcExec.Run()
 	if err != nil {
 		log.Fatalln("Failed to compile with solc: ", solcExec.String())
