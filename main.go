@@ -63,9 +63,22 @@ wrap3
 	}
 }
 
+func compileGo(fs *Flags) {
+	createTempFolder()
+	defer removeTempFolder()
+
+	copyContractFolder(fs)
+	copyOpenZeppelinPackage(fs)
+
+	processAllContractFiles()
+
+	solcCompile(fs)
+	abigenCompile(fs)
+}
+
 func compileJava(fs *Flags) {
 	createTempFolder()
-	// defer removeTempFolder()
+	defer removeTempFolder()
 
 	copyContractFolder(fs)
 	copyOpenZeppelinPackage(fs)
@@ -81,6 +94,14 @@ func web3jCompile(fs *Flags) {
 	err := web3jExec.Run()
 	if err != nil {
 		log.Fatalln("Failed to compile with web3j: ", web3jExec.String())
+	}
+}
+
+func abigenCompile(fs *Flags) {
+	abigenExec := exec.Command("abigen", "--bin=./temp/artifacts/"+*fs.Target+".bin", "--abi=./temp/artifacts/"+*fs.Target+".abi", "--out="+*fs.Output+"/"+*fs.Target+".go", "--pkg="+*fs.Package)
+	err := abigenExec.Run()
+	if err != nil {
+		log.Fatalln("Failed to compile with abigen(go): ", abigenExec.String())
 	}
 }
 
