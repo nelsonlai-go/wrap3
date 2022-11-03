@@ -223,8 +223,12 @@ func parseFlags() *Flags {
 	}
 	flag.Parse()
 
-	if *f.Lang == "" || *f.Target == "" || *f.Package == "" {
-		log.Fatalln("-l, -t, -p are required")
+	if *f.Lang == "" || *f.Target == "" {
+		log.Fatalln("-l, -t are required")
+	}
+
+	if (*f.Lang == "java" || *f.Lang == "go") && *f.Package == "" {
+		log.Fatalln("-p is required")
 	}
 	return f
 }
