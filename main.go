@@ -139,7 +139,7 @@ func copyOpenZeppelinPackage(fs *Flags) {
 	cmd := exec.Command("cp", "--recursive", from, to)
 	err := cmd.Run()
 	if err != nil {
-		panic(err)
+		log.Fatalf("failed to copy folder - from: %s to: %s\n", from, to)
 	}
 }
 
@@ -149,7 +149,7 @@ func copyContractFolder(fs *Flags) {
 	cmd := exec.Command("cp", "--recursive", from, to)
 	err := cmd.Run()
 	if err != nil {
-		panic(err)
+		log.Fatalf("failed to copy folder - from: %s to: %s\n", from, to)
 	}
 }
 
