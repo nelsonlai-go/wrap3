@@ -65,7 +65,7 @@ wrap3
 
 func compileJava(fs *Flags) {
 	createTempFolder()
-	// defer removeTempFolder()
+	defer removeTempFolder()
 
 	copyContractFolder(fs)
 	copyOpenZeppelinPackage(fs)
@@ -146,8 +146,12 @@ func copyOpenZeppelinPackage(fs *Flags) {
 func copyContractFolder(fs *Flags) {
 	from := *fs.ContractFolder
 	to := "./temp/contracts"
+	err := os.MkdirAll(to, os.ModePerm)
+	if err != nil {
+		panic(err)
+	}
 	cmd := exec.Command("cp", "--recursive", from, to)
-	err := cmd.Run()
+	err = cmd.Run()
 	if err != nil {
 		log.Fatalf("failed to copy folder - from: %s to: %s\n", from, to)
 	}
