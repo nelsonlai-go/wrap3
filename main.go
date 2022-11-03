@@ -139,7 +139,7 @@ func copyOpenZeppelinPackage(fs *Flags) {
 	cmd := exec.Command("cp", "--recursive", from, to)
 	err := cmd.Run()
 	if err != nil {
-		log.Fatalf("failed to copy folder - from: %s to: %s\n", from, to)
+		log.Fatalf("failed to copy folder - from: %s to: %s (errer: %s)\n", from, to, err.Error())
 	}
 }
 
