@@ -136,10 +136,10 @@ func getAllContractFilePaths(dir string) []string {
 func copyOpenZeppelinPackage(fs *Flags) {
 	from := *fs.NodeModuleFolder + "/" + OPENZEPPELIN_PACKAGE_NAME
 	to := "./temp/contracts/" + OPENZEPPELIN_PACKAGE_NAME
-	cmd := exec.Command("cp", "--recursive", from, to)
+	cmd := exec.Command("cp", "-r", from, to)
 	err := cmd.Run()
 	if err != nil {
-		log.Fatalf("failed to copy folder - from: %s to: %s (errer: %s)\n", from, to, err.Error())
+		log.Fatalf("failed to copy folder - from: %s to: %s (error: %s)\n", from, to, err.Error())
 	}
 }
 
@@ -150,10 +150,10 @@ func copyContractFolder(fs *Flags) {
 	if err != nil {
 		panic(err)
 	}
-	cmd := exec.Command("cp", "--recursive", from, to)
+	cmd := exec.Command("cp", "-r", from, to)
 	err = cmd.Run()
 	if err != nil {
-		log.Fatalf("failed to copy folder - from: %s to: %s\n", from, to)
+		log.Fatalf("failed to copy folder - from: %s to: %s (error: %s)\n", from, to, err.Error())
 	}
 }
 
