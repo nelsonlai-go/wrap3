@@ -145,7 +145,7 @@ func copyOpenZeppelinPackage(fs *Flags) {
 
 func copyContractFolder(fs *Flags) {
 	from := *fs.ContractFolder
-	to := "./temp/contracts"
+	to := "./temp"
 	err := os.MkdirAll(to, os.ModePerm)
 	if err != nil {
 		panic(err)
