@@ -65,7 +65,7 @@ wrap3
 
 func compileJava(fs *Flags) {
 	createTempFolder()
-	defer removeTempFolder()
+	// defer removeTempFolder()
 
 	copyContractFolder(fs)
 	copyOpenZeppelinPackage(fs)
