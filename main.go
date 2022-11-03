@@ -41,12 +41,12 @@ func main() {
 wrap3 help
 
 wrap3
- -lang[-l] <java|go>
- -target[-t] <contracts/Contract.sol>
- -contract-folder[-cf] <contracts> (optional)
- -node-module-folder[-nf] <node-modules> (optional)
- -output[-o] <./output> (optional)
- -package[-p] <package>
+ -l <java | go> [language of wrapper class to compile]
+ -target <Contract> [target of contract to compile, file extension is no needed]
+ -cf <contracts> (optional, default: ./contracts) [contract folder of .sol files] 
+ -nf <node-modules> (optional, default: ./node-modules) [app will find @openzeppelin package in this folder]
+ -o <./output> (optional, default: ./wrap3) [output folder]
+ -p <package> [package name of the java class or the go file]
  compile`)
 	case "compile":
 		fs := parseFlags()
