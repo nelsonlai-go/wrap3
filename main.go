@@ -41,7 +41,7 @@ func main() {
 wrap3 help
 
 wrap3
- -l <java | go> [language of wrapper class to compile]
+ -l <java | go | abi> [language of wrapper class to compile]
  -t <Contract> [target of contract to compile, file extension is no needed]
  -cf <contracts> (optional, default: ./contracts) [contract folder of .sol files] 
  -nf <node-modules> (optional, default: ./node-modules) [app will find @openzeppelin package in this folder]
@@ -55,6 +55,8 @@ wrap3
 			compileJava(fs)
 		case "go":
 			compileGo(fs)
+		case "abi":
+			compileABI(fs)
 		default:
 			log.Fatalf("non-support lang: %s\n", *fs.Lang)
 		}
@@ -87,6 +89,23 @@ func compileJava(fs *Flags) {
 
 	solcCompile(fs)
 	web3jCompile(fs)
+}
+
+func compileABI(fs *Flags) {
+	createTempFolder()
+	defer removeTempFolder()
+
+	copyContractFolder(fs)
+	copyOpenZeppelinPackage(fs)
+
+	processAllContractFiles()
+	solcCompile(fs)
+
+	cpExec := exec.Command("cp", "./temp/artifacts/"+*fs.Target+".bin", *fs.Output+"/"+*fs.Target+".bin")
+	err := cpExec.Run()
+	if err != nil {
+		log.Fatalln("Failed to copy .abi: ", cpExec.String())
+	}
 }
 
 func web3jCompile(fs *Flags) {
