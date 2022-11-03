@@ -80,7 +80,7 @@ func web3jCompile(fs *Flags) {
 	web3jExec := exec.Command("web3j", "generate", "solidity", "-b", "./temp/artifacts/"+*fs.Target+".bin", "-a", "./temp/artifacts/"+*fs.Target+".abi", "-o", *fs.Output, "-p", *fs.Package)
 	err := web3jExec.Run()
 	if err != nil {
-		panic(err)
+		log.Fatalln("Failed to compile with web3j: ", web3jExec.String())
 	}
 }
 
