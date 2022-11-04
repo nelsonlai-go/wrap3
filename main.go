@@ -49,6 +49,12 @@ Usage:
 
 	wrap3 [OPTIONS] [COMMAND]
 
+Dependencies:
+
+	- You should install "solc" tool
+	- You should install "web3j" tool for compiling java wrapper class
+	- You should install "abigen" tool for compiling golang wrapper class
+
 Commands:
 
 	help	- get help
