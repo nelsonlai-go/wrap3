@@ -1,142 +1,156 @@
 package main
 
 import (
-	"flag"
 	"fmt"
 	"log"
 	"os"
 	"os/exec"
 	"strings"
+
+	"github.com/nelsonlai-go/args"
 )
-
-/*
-	wrap3 help
-
-	wrap3
-		-lang[-l] <java|go>
-		-target[-t] <contracts/Contract.sol>
-		-contract-folder[-cf] <contracts> (optional)
-		-node-module-folder[-nf] <node-modules> (optional)
-		-output[-o] <./output> (optional)
-		-package[-p] <package>
-		compile
-*/
 
 const OPENZEPPELIN_PACKAGE_NAME = "@openzeppelin"
 
+var (
+	ARGS                    *args.Args
+	ACTION                  string
+	FLAG_LANG               string
+	FLAG_TARGET             string
+	FLAG_PACKAGE_NAME       string
+	FLAG_CONTRACT_FOLDER    string
+	FLAG_NODE_MODULE_FOLDER string
+	FLAG_OUTPUT_FOLDER      string
+)
+
 type Flags struct {
-	Lang             *string
-	Target           *string
-	ContractFolder   *string
-	NodeModuleFolder *string
-	Output           *string
-	Package          *string
+	Lang             string
+	Target           string
+	ContractFolder   string
+	NodeModuleFolder string
+	Output           string
+	Package          string
 }
 
 func main() {
+	ARGS = args.New()
+
 	action := getAction()
 	switch action {
 	case "help":
 		fmt.Println(`
-wrap3 help
+=========
+| Wrap3 |
+=========
 
-wrap3
- -l <java | go | abi> [language of wrapper class to compile]
- -t <Contract> [target of contract to compile, file extension is no needed]
- -cf <contracts> (optional, default: ./contracts) [contract folder of .sol files] 
- -nf <node-modules> (optional, default: ./node-modules) [app will find @openzeppelin package in this folder]
- -o <./output> (optional, default: ./wrap3) [output folder]
- -p <package> [package name of the java class or the go file]
- compile`)
+Generate wrapper class of solidity contract for Java & Golang.
+
+Usage:
+
+	wrap3 [OPTIONS] [COMMAND]
+
+Commands:
+
+	help	- get help
+
+	compile - compile the solidity contract to wrapper class
+	  options:
+	    --lang (-l)      | required                            | java or go or abi, language to compile
+	    --target (-t)    | required	                           | target contract file name (without extension)
+	    --package (-p)   | required if lang is java or go      | the package name of the java class or golang file
+	    --contracts (-c) | optional (default: ./contracts)     | the folder containing the .sol files
+	    --node (-n)      | optional (default: ./node_modules)  | the node modules folder containing the @openzeppelin package
+	    --output (-o)    | optional (default: ./wrap3)         | the output folder
+		`)
 	case "compile":
-		fs := parseFlags()
-		switch *fs.Lang {
+		parseFlags()
+		switch FLAG_LANG {
 		case "java":
-			compileJava(fs)
+			compileJava()
 		case "go":
-			compileGo(fs)
+			compileGo()
 		case "abi":
-			compileABI(fs)
+			compileABI()
 		default:
-			log.Fatalf("non-support lang: %s\n", *fs.Lang)
+			log.Fatalf("non-support lang: %s\n", FLAG_LANG)
 		}
 	default:
 		log.Fatalf("unknown action: %s\n", action)
 	}
 }
 
-func compileGo(fs *Flags) {
+func compileGo() {
 	createTempFolder()
 	defer removeTempFolder()
 
-	copyContractFolder(fs)
-	copyOpenZeppelinPackage(fs)
+	copyContractFolder()
+	copyOpenZeppelinPackage()
 
 	processAllContractFiles()
 
-	solcCompile(fs)
-	abigenCompile(fs)
+	solcCompile()
+	abigenCompile()
 }
 
-func compileJava(fs *Flags) {
+func compileJava() {
 	createTempFolder()
 	defer removeTempFolder()
 
-	copyContractFolder(fs)
-	copyOpenZeppelinPackage(fs)
+	copyContractFolder()
+	copyOpenZeppelinPackage()
 
 	processAllContractFiles()
 
-	solcCompile(fs)
-	web3jCompile(fs)
+	solcCompile()
+	web3jCompile()
 }
 
-func compileABI(fs *Flags) {
+func compileABI() {
 	createTempFolder()
 	defer removeTempFolder()
 
-	copyContractFolder(fs)
-	copyOpenZeppelinPackage(fs)
+	copyContractFolder()
+	copyOpenZeppelinPackage()
 
 	processAllContractFiles()
-	solcCompile(fs)
+	solcCompile()
 
-	err := os.MkdirAll(*fs.Output, os.ModePerm)
+	err := os.MkdirAll(FLAG_OUTPUT_FOLDER, os.ModePerm)
 	if err != nil {
 		panic(err)
 	}
 
-	cpAbiExec := exec.Command("cp", "./temp/artifacts/"+*fs.Target+".abi", *fs.Output+"/"+*fs.Target+".abi")
+	cpAbiExec := exec.Command("cp", "./temp/artifacts/"+FLAG_TARGET+".abi", FLAG_OUTPUT_FOLDER+"/"+FLAG_TARGET+".abi")
 	err = cpAbiExec.Run()
 	if err != nil {
 		log.Fatalln("Failed to copy .abi: ", cpAbiExec.String())
 	}
 
-	cpBinExec := exec.Command("cp", "./temp/artifacts/"+*fs.Target+".bin", *fs.Output+"/"+*fs.Target+".bin")
+	cpBinExec := exec.Command("cp", "./temp/artifacts/"+FLAG_TARGET+".bin", FLAG_OUTPUT_FOLDER+"/"+FLAG_TARGET+".bin")
 	err = cpBinExec.Run()
 	if err != nil {
 		log.Fatalln("Failed to copy .abi: ", cpBinExec.String())
 	}
 }
 
-func web3jCompile(fs *Flags) {
-	web3jExec := exec.Command("web3j", "generate", "solidity", "-b", "./temp/artifacts/"+*fs.Target+".bin", "-a", "./temp/artifacts/"+*fs.Target+".abi", "-o", *fs.Output, "-p", *fs.Package)
+func web3jCompile() {
+	web3jExec := exec.Command("web3j", "generate", "solidity", "-b", "./temp/artifacts/"+FLAG_TARGET+".bin", "-a", "./temp/artifacts/"+FLAG_TARGET+".abi", "-o", FLAG_OUTPUT_FOLDER, "-p", FLAG_PACKAGE_NAME)
 	err := web3jExec.Run()
 	if err != nil {
 		log.Fatalln("Failed to compile with web3j: ", web3jExec.String())
 	}
 }
 
-func abigenCompile(fs *Flags) {
-	abigenExec := exec.Command("abigen", "--bin=./temp/artifacts/"+*fs.Target+".bin", "--abi=./temp/artifacts/"+*fs.Target+".abi", "--out="+*fs.Output+"/"+*fs.Target+".go", "--pkg="+*fs.Package)
+func abigenCompile() {
+	abigenExec := exec.Command("abigen", "--bin=./temp/artifacts/"+FLAG_TARGET+".bin", "--abi=./temp/artifacts/"+FLAG_TARGET+".abi", "--out="+FLAG_OUTPUT_FOLDER+"/"+FLAG_TARGET+".go", "--pkg="+FLAG_PACKAGE_NAME)
 	err := abigenExec.Run()
 	if err != nil {
 		log.Fatalln("Failed to compile with abigen(go): ", abigenExec.String())
 	}
 }
 
-func solcCompile(fs *Flags) {
-	solcExec := exec.Command("solc", "./temp/contracts/"+*fs.Target+".sol", "--bin", "--abi", "--overwrite", "-o", "./temp/artifacts")
+func solcCompile() {
+	solcExec := exec.Command("solc", "./temp/contracts/"+FLAG_TARGET+".sol", "--bin", "--abi", "--overwrite", "-o", "./temp/artifacts")
 	err := solcExec.Run()
 	if err != nil {
 		log.Fatalln("Failed to compile with solc: ", solcExec.String())
@@ -184,8 +198,8 @@ func getAllContractFilePaths(dir string) []string {
 	return paths
 }
 
-func copyOpenZeppelinPackage(fs *Flags) {
-	from := *fs.NodeModuleFolder + "/" + OPENZEPPELIN_PACKAGE_NAME
+func copyOpenZeppelinPackage() {
+	from := FLAG_NODE_MODULE_FOLDER + "/" + OPENZEPPELIN_PACKAGE_NAME
 	to := "./temp/contracts/" + OPENZEPPELIN_PACKAGE_NAME
 	cmd := exec.Command("cp", "-r", from, to)
 	err := cmd.Run()
@@ -194,8 +208,8 @@ func copyOpenZeppelinPackage(fs *Flags) {
 	}
 }
 
-func copyContractFolder(fs *Flags) {
-	from := *fs.ContractFolder
+func copyContractFolder() {
+	from := FLAG_CONTRACT_FOLDER
 	to := "./temp"
 	err := os.MkdirAll(to, os.ModePerm)
 	if err != nil {
@@ -223,30 +237,21 @@ func removeTempFolder() {
 	}
 }
 
-func parseFlags() *Flags {
-	f := &Flags{
-		Lang:             flag.String("l", "", "language"),
-		Target:           flag.String("t", "", "target"),
-		ContractFolder:   flag.String("cf", "./contracts", "contract folder"),
-		NodeModuleFolder: flag.String("nf", "./node_modules", "node module folder"),
-		Output:           flag.String("o", "./wrap3", "output folder"),
-		Package:          flag.String("p", "", "package name"),
+func parseFlags() {
+	FLAG_LANG = ARGS.FlagString("lang", true, "", "l")
+	FLAG_TARGET = ARGS.FlagString("target", true, "", "t")
+	FLAG_PACKAGE_NAME = ARGS.FlagString("package", false, "", "p")
+	FLAG_CONTRACT_FOLDER = ARGS.FlagString("contract", false, "./contracts", "c")
+	FLAG_NODE_MODULE_FOLDER = ARGS.FlagString("node", false, "./node_modules", "n")
+	FLAG_OUTPUT_FOLDER = ARGS.FlagString("output", false, "./wrap3", "o")
+	if (FLAG_LANG == "java" || FLAG_LANG == "go") && FLAG_PACKAGE_NAME == "" {
+		log.Fatalf("flags: [%s] is required when [lang] is java or go.\n", "package")
 	}
-	flag.Parse()
-
-	if *f.Lang == "" || *f.Target == "" {
-		log.Fatalln("-l, -t are required")
-	}
-
-	if (*f.Lang == "java" || *f.Lang == "go") && *f.Package == "" {
-		log.Fatalln("-p is required")
-	}
-	return f
 }
 
 func getAction() string {
-	if len(os.Args) < 2 {
-		log.Fatalln("action is missing. usage: wrap3 <action> <options>")
+	if len(ARGS.Args) == 0 {
+		log.Fatalln("[command] is missing. usage: wrap3 [OPTIONS] [COMMAND]")
 	}
-	return os.Args[len(os.Args)-1]
+	return ARGS.Args[0]
 }
