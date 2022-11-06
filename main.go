@@ -32,6 +32,11 @@ type Flags struct {
 	Package          string
 }
 
+type ContractFilePath struct {
+	Path  string
+	Level int
+}
+
 func main() {
 	ARGS = args.New()
 
@@ -164,29 +169,38 @@ func solcCompile() {
 }
 
 func processAllContractFiles() {
-	contractFilePaths := getAllContractFilePaths("./temp/contracts")
+	contractFilePaths := getAllContractFilePaths("./temp/contracts", 1)
 	for _, path := range contractFilePaths {
 		readContractFileAndReplaceImports(path)
 	}
 }
 
-func readContractFileAndReplaceImports(path string) {
-	content, err := os.ReadFile(path)
+func readContractFileAndReplaceImports(path ContractFilePath) {
+	content, err := os.ReadFile(path.Path)
 	if err != nil {
 		panic(err)
 	}
 
-	txt := string(content)
-	txt = strings.ReplaceAll(txt, `import "@openzeppelin`, `import "./@openzeppelin`)
+	replaceText := "@openzeppelin"
+	if path.Level == 1 {
+		replaceText = "./" + replaceText
+	} else {
+		for i := 1; i < path.Level; i++ {
+			replaceText = "../" + replaceText
+		}
+	}
 
-	err = os.WriteFile(path, []byte(txt), os.ModePerm)
+	txt := string(content)
+	txt = strings.ReplaceAll(txt, `import "@openzeppelin`, replaceText)
+
+	err = os.WriteFile(path.Path, []byte(txt), os.ModePerm)
 	if err != nil {
 		panic(err)
 	}
 }
 
-func getAllContractFilePaths(dir string) []string {
-	paths := make([]string, 0)
+func getAllContractFilePaths(dir string, lv int) []ContractFilePath {
+	paths := make([]ContractFilePath, 0)
 
 	ds, err := os.ReadDir(dir)
 	if err != nil {
@@ -195,9 +209,12 @@ func getAllContractFilePaths(dir string) []string {
 
 	for _, d := range ds {
 		if d.IsDir() {
-			paths = append(paths, getAllContractFilePaths(dir+"/"+d.Name())...)
+			paths = append(paths, getAllContractFilePaths(dir+"/"+d.Name(), lv+1)...)
 		} else if strings.Contains(d.Name(), ".sol") {
-			paths = append(paths, dir+"/"+d.Name())
+			paths = append(paths, ContractFilePath{
+				Path:  dir + "/" + d.Name(),
+				Level: lv,
+			})
 		}
 	}
 
