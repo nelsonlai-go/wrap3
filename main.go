@@ -191,7 +191,7 @@ func readContractFileAndReplaceImports(path ContractFilePath) {
 	}
 
 	txt := string(content)
-	txt = strings.ReplaceAll(txt, `import "@openzeppelin`, replaceText)
+	txt = strings.ReplaceAll(txt, `import "@openzeppelin`, `import "`+replaceText)
 
 	err = os.WriteFile(path.Path, []byte(txt), os.ModePerm)
 	if err != nil {
